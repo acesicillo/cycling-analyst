@@ -60,6 +60,26 @@ def fetch_all():
     print("📡 Fetching athlete profile...")
     athlete = get("")   # GET /api/v1/athlete/0
 
+    # ── DEBUG: print first activity and first wellness record so we can see real field names
+    if activities:
+        print("\n🔍 DEBUG — First activity keys & fitness fields:")
+        a0 = activities[0]
+        print(f"   name={a0.get('name')} date={a0.get('start_date_local','')[:10]}")
+        for k, v in a0.items():
+            if any(x in k.lower() for x in ['ctl','atl','tsb','load','fitness','form','fatigue']):
+                print(f"   {k} = {v}")
+
+    if wellness:
+        print("\n🔍 DEBUG — First wellness record keys:")
+        w0 = wellness[0]
+        for k, v in w0.items():
+            print(f"   {k} = {v}")
+
+    print("\n🔍 DEBUG — Athlete profile fitness fields:")
+    for k, v in athlete_data.items() if isinstance(athlete_data, dict) else []:
+        if any(x in k.lower() for x in ['ctl','atl','tsb','fitness','fatigue','form']):
+            print(f"   {k} = {v}")
+
     return activities, wellness, athlete
 
 # ── BUILD FITNESS SERIES from activities ───────────────────
