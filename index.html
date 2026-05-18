@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>David Moreno · Cycling Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:        #0a0c0f;
+    --surface:   #111418;
+    --border:    #1e2530;
+    --accent:    #e8ff47;
+    --accent2:   #47c8ff;
+    --danger:    #ff4747;
+    --warn:      #ffaa47;
+    --text:      #e8eaf0;
+    --muted:     #5a6478;
+    --ctl:       #47c8ff;
+    --atl:       #ff6b6b;
+    --tsb:       #e8ff47;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+  }
+  .app { max-width: 960px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  /* HEADER */
+  .header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--border);
+  }
+  .header-left h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 42px; font-weight: 800; letter-spacing: -1px; line-height: 1;
+  }
+  .header-left h1 span { color: var(--accent); }
+  .header-left p { color: var(--muted); font-size: 11px; margin-top: 4px; letter-spacing: 2px; text-transform: uppercase; }
+
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 2px; font-size: 11px;
+    font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase;
+  }
+  .status-badge.ready   { background: rgba(232,255,71,0.12); color: var(--accent); border: 1px solid rgba(232,255,71,0.3); }
+  .status-badge.caution { background: rgba(255,170,71,0.12); color: var(--warn);   border: 1px solid rgba(255,170,71,0.3); }
+  .status-badge.rest    { background: rgba(255,71,71,0.12);  color: var(--danger); border: 1px solid rgba(255,71,71,0.3); }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 2s infinite; }
+
+  /* SETUP */
+  .setup-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent); border-radius: 4px; padding: 24px; margin-bottom: 24px;
+  }
+  .setup-card h3 { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .setup-card p  { color: var(--muted); line-height: 1.6; margin-bottom: 16px; font-size: 12px; }
+  .input-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .input-group { flex: 1; min-width: 200px; }
+  .input-group label { display: block; color: var(--muted); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+  .input-group input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 3px; color: var(--text); font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; padding: 10px 12px; outline: none; transition: border-color 0.2s;
+  }
+  .input-group input:focus { border-color: var(--accent); }
+  .btn {
+    padding: 10px 24px; background: var(--accent); color: #0a0c0f;
+    border: none; border-radius: 3px; font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px; font-weight: 700; letter-spacing: 1px; cursor: pointer;
+    transition: all 0.2s; align-self: flex-end; white-space: nowrap;
+  }
+  .btn:hover { background: #d4eb3a; transform: translateY(-1px); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-sm { padding: 7px 16px; font-size: 13px; }
+  .error-msg { color: var(--danger); font-size: 11px; margin-top: 8px; }
+
+  /* KPI */
+  .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 4px; padding: 16px; position: relative; overflow: hidden;
+  }
+  .kpi::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; }
+  .kpi.ctl::after { background: var(--ctl); }
+  .kpi.atl::after { background: var(--atl); }
+  .kpi.tsb::after { background: var(--tsb); }
+  .kpi-label { color: var(--muted); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+  .kpi-value { font-family: 'Barlow Condensed', sans-serif; font-size: 48px; font-weight: 800; line-height: 1; letter-spacing: -1px; }
+  .kpi.ctl .kpi-value { color: var(--ctl); }
+  .kpi.atl .kpi-value { color: var(--atl); }
+  .kpi.tsb .kpi-value { color: var(--tsb); }
+  .kpi-sub { color: var(--muted); font-size: 10px; margin-top: 4px; }
+
+  /* WELLNESS */
+  .wellness-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  @media(max-width:600px){ .wellness-grid { grid-template-columns: repeat(2,1fr); } }
+  .wellness-card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 14px; }
+  .w-label { color: var(--muted); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+  .w-value { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 700; }
+  .w-unit  { color: var(--muted); font-size: 10px; }
+
+  /* CHART */
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 16px; }
+  .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .chart-title { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; }
+  .legend { display: flex; gap: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ACTIVITIES */
+  .activities-card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-bottom: 16px; }
+  .activity-row {
+    display: grid; grid-template-columns: 80px 1fr repeat(4, 55px);
+    gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--border); align-items: center;
+  }
+  .activity-row:last-child { border-bottom: none; }
+  .act-date { color: var(--muted); font-size: 11px; }
+  .act-name { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .act-stat { text-align: right; }
+  .act-stat .val  { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 600; }
+  .act-stat .unit { color: var(--muted); font-size: 9px; display: block; letter-spacing: 1px; }
+  .tss-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-top: 4px; }
+  .tss-bar { height: 3px; background: var(--accent); border-radius: 2px; }
+  .act-header { color: var(--muted); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; }
+
+  /* BRIEF */
+  .brief-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2); border-radius: 4px; padding: 20px; margin-bottom: 16px;
+  }
+  .brief-card h3 { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; color: var(--accent2); margin-bottom: 12px; }
+  .brief-content { color: var(--text); line-height: 1.8; font-size: 12px; white-space: pre-wrap; }
+
+  .refresh-row { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 16px; align-items: center; }
+  .last-updated { color: var(--muted); font-size: 10px; letter-spacing: 1px; }
+  .loading { color: var(--muted); font-size: 12px; padding: 40px; text-align: center; letter-spacing: 2px; }
+
+  @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.3; } }
+  @keyframes fadeUp { from{ opacity:0; transform:translateY(12px); } to{ opacity:1; transform:translateY(0); } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="header-left">
+      <h1>DAVID <span>MORENO</span></h1>
+      <p>Capos Team · Amateur Cyclist · 38y · 79kg · 1.85m</p>
+    </div>
+    <div id="statusBadge"></div>
+  </div>
+
+  <div class="setup-card" id="setupCard">
+    <h3>⚡ Connect to Intervals.icu</h3>
+    <p>Enter your credentials to load your live training data.</p>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Athlete ID</label>
+        <input id="athleteId" type="text" value="45826670"/>
+      </div>
+      <div class="input-group">
+        <label>API Key</label>
+        <input id="apiKey" type="password" placeholder="paste your api key"/>
+      </div>
+      <button class="btn" onclick="loadData()">LOAD DATA</button>
+    </div>
+    <div id="setupError" class="error-msg"></div>
+  </div>
+
+  <div id="dashboard" style="display:none">
+    <div class="refresh-row">
+      <span class="last-updated" id="lastUpdated"></span>
+      <button class="btn btn-sm" onclick="loadData()">↻ REFRESH</button>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi ctl"><div class="kpi-label">CTL · Fitness</div><div class="kpi-value" id="kpiCTL">—</div><div class="kpi-sub">Chronic Training Load</div></div>
+      <div class="kpi atl"><div class="kpi-label">ATL · Fatigue</div><div class="kpi-value" id="kpiATL">—</div><div class="kpi-sub">Acute Training Load</div></div>
+      <div class="kpi tsb"><div class="kpi-label">TSB · Form</div><div class="kpi-value" id="kpiTSB">—</div><div class="kpi-sub">CTL minus ATL</div></div>
+    </div>
+
+    <div class="wellness-grid">
+      <div class="wellness-card"><div class="w-label">Resting HR</div><div class="w-value" id="wHR">—</div><div class="w-unit">BPM</div></div>
+      <div class="wellness-card"><div class="w-label">HRV</div><div class="w-value" id="wHRV">—</div><div class="w-unit">MS</div></div>
+      <div class="wellness-card"><div class="w-label">Sleep</div><div class="w-value" id="wSleep">—</div><div class="w-unit">HRS</div></div>
+      <div class="wellness-card"><div class="w-label">Fatigue</div><div class="w-value" id="wFatigue">—</div><div class="w-unit">/ 7</div></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">PERFORMANCE MANAGEMENT · 60 DAYS</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--ctl)"></div>CTL</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--atl)"></div>ATL</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--tsb)"></div>TSB</div>
+        </div>
+      </div>
+      <canvas id="fitnessChart" height="200"></canvas>
+    </div>
+
+    <div class="activities-card">
+      <div class="chart-header"><div class="chart-title">RECENT ACTIVITIES</div></div>
+      <div class="activity-row">
+        <span class="act-header">DATE</span><span class="act-header">ACTIVITY</span>
+        <span class="act-header" style="text-align:right">KM</span>
+        <span class="act-header" style="text-align:right">MIN</span>
+        <span class="act-header" style="text-align:right">TSS</span>
+        <span class="act-header" style="text-align:right">W/KG</span>
+      </div>
+      <div id="activitiesList"><div class="loading">LOADING...</div></div>
+    </div>
+
+    <div class="brief-card">
+      <h3>🤖 CLAUDE DAILY BRIEF — COPY & PASTE INTO CLAUDE.AI</h3>
+      <div class="brief-content" id="claudeBrief"></div>
+      <br/>
+      <button class="btn btn-sm" onclick="copyBrief()">📋 COPY TO CLIPBOARD</button>
+    </div>
+  </div>
+
+</div>
+<script>
+const WEIGHT_KG = 79;
+const PROXY = 'https://corsproxy.io/?';
+
+function apiUrl(athleteId, path) {
+  const base = `https://intervals.icu/api/v1/athlete/${athleteId}${path}`;
+  return PROXY + encodeURIComponent(base);
+}
+
+function getHeaders(apiKey) {
+  return { 'Authorization': 'Basic ' + btoa('API_KEY:' + apiKey) };
+}
+
+function dateStr(daysBack) {
+  const d = new Date();
+  d.setDate(d.getDate() - daysBack);
+  return d.toISOString().split('T')[0];
+}
+
+async function fetchFitness(id, key) {
+  const url = apiUrl(id, `/fitness-data?oldest=${dateStr(60)}&newest=${dateStr(0)}`);
+  const r = await fetch(url, { headers: getHeaders(key) });
+  if (!r.ok) throw new Error(`Fitness API ${r.status}: ${r.statusText}`);
+  return r.json();
+}
+
+async function fetchWellness(id, key) {
+  const url = apiUrl(id, `/wellness?oldest=${dateStr(7)}&newest=${dateStr(0)}`);
+  const r = await fetch(url, { headers: getHeaders(key) });
+  if (!r.ok) throw new Error(`Wellness API ${r.status}`);
+  return r.json();
+}
+
+async function fetchActivities(id, key) {
+  const oldest = new Date(); oldest.setDate(oldest.getDate() - 30);
+  const url = apiUrl(id, `/activities?oldest=${oldest.toISOString()}&newest=${new Date().toISOString()}`);
+  const r = await fetch(url, { headers: getHeaders(key) });
+  if (!r.ok) throw new Error(`Activities API ${r.status}`);
+  return r.json();
+}
+
+function renderChart(data) {
+  const canvas = document.getElementById('fitnessChart');
+  canvas.width = canvas.parentElement.offsetWidth - 40;
+  const ctx = canvas.getContext('2d');
+  const pts = data.map(d => ({
+    date: (d.date||'').slice(5),
+    CTL: d.ctl != null ? +d.ctl.toFixed(1) : null,
+    ATL: d.atl != null ? +d.atl.toFixed(1) : null,
+    TSB: d.tsb != null ? +d.tsb.toFixed(1) : null,
+  })).filter(d => d.CTL != null);
+
+  const pad = {top:10, right:10, bottom:28, left:38};
+  const W = canvas.width - pad.left - pad.right;
+  const H = canvas.height - pad.top - pad.bottom;
+  const allV = pts.flatMap(p=>[p.CTL,p.ATL,p.TSB]).filter(v=>v!=null);
+  const minV = Math.min(...allV)-5, maxV = Math.max(...allV)+5;
+  const xS = i => pad.left + (i/(pts.length-1))*W;
+  const yS = v => pad.top + H - ((v-minV)/(maxV-minV))*H;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // grid
+  for(let i=0;i<=4;i++){
+    const y = pad.top+(H/4)*i;
+    ctx.strokeStyle='#1e2530'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(pad.left+W,y); ctx.stroke();
+    ctx.fillStyle='#5a6478'; ctx.font='9px JetBrains Mono'; ctx.textAlign='right';
+    ctx.fillText(Math.round(maxV-((maxV-minV)/4)*i), pad.left-4, y+4);
+  }
+
+  // zero line
+  if(minV<0&&maxV>0){
+    ctx.strokeStyle='rgba(232,255,71,0.2)'; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(pad.left,yS(0)); ctx.lineTo(pad.left+W,yS(0)); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function line(key, color, w=2){
+    ctx.strokeStyle=color; ctx.lineWidth=w; ctx.beginPath();
+    let s=false;
+    pts.forEach((p,i)=>{
+      if(p[key]==null) return;
+      if(!s){ctx.moveTo(xS(i),yS(p[key]));s=true;}
+      else ctx.lineTo(xS(i),yS(p[key]));
+    });
+    ctx.stroke();
+  }
+  line('ATL','#ff6b6b',1.5);
+  line('TSB','#e8ff47',1.5);
+  line('CTL','#47c8ff',2.5);
+
+  // x labels
+  ctx.fillStyle='#5a6478'; ctx.font='9px JetBrains Mono'; ctx.textAlign='center';
+  const step=Math.max(1,Math.floor(pts.length/6));
+  pts.forEach((p,i)=>{ if(i%step===0) ctx.fillText(p.date, xS(i), canvas.height-6); });
+}
+
+function renderKPIs(fitness, wellness) {
+  const lat = fitness[fitness.length-1]||{};
+  const ctl = lat.ctl!=null?Math.round(lat.ctl):null;
+  const atl = lat.atl!=null?Math.round(lat.atl):null;
+  const tsb = lat.tsb!=null?Math.round(lat.tsb):null;
+  document.getElementById('kpiCTL').textContent = ctl??'—';
+  document.getElementById('kpiATL').textContent = atl??'—';
+  document.getElementById('kpiTSB').textContent = tsb!=null?(tsb>0?'+':'')+tsb:'—';
+
+  let status='ready', label='🟢 READY TO TRAIN';
+  if(tsb!=null){ if(tsb<-20){status='rest';label='🔴 REST DAY';}else if(tsb<-5){status='caution';label='🟡 TAKE IT EASY';} }
+  document.getElementById('statusBadge').innerHTML =
+    `<div class="status-badge ${status}"><div class="status-dot"></div>${label}</div>`;
+
+  const w = wellness.length?wellness[wellness.length-1]:{};
+  document.getElementById('wHR').textContent     = w.restingHR?Math.round(w.restingHR):'—';
+  document.getElementById('wHRV').textContent    = w.hrv?Math.round(w.hrv):'—';
+  document.getElementById('wSleep').textContent  = w.sleepSecs?(w.sleepSecs/3600).toFixed(1):'—';
+  document.getElementById('wFatigue').textContent= w.fatigue??'—';
+}
+
+function renderActivities(acts) {
+  const el = document.getElementById('activitiesList');
+  const recent = [...acts].reverse().slice(0,8);
+  const maxTSS = Math.max(...recent.map(a=>a.icu_training_load||0),1);
+  if(!recent.length){el.innerHTML='<div class="loading">NO RECENT ACTIVITIES</div>';return;}
+  el.innerHTML = recent.map(a=>{
+    const dist = a.distance?(a.distance/1000).toFixed(1):'—';
+    const time = a.moving_time?Math.round(a.moving_time/60):'—';
+    const tss  = a.icu_training_load?Math.round(a.icu_training_load):'—';
+    const wkg  = a.weighted_average_watts?(a.weighted_average_watts/WEIGHT_KG).toFixed(2):'—';
+    const bar  = Math.round(((a.icu_training_load||0)/maxTSS)*100);
+    return `<div class="activity-row">
+      <span class="act-date">${(a.start_date_local||'').slice(5,10)}</span>
+      <span class="act-name" title="${a.name||''}">${a.name||'Ride'}</span>
+      <div class="act-stat"><span class="val">${dist}</span><span class="unit">KM</span></div>
+      <div class="act-stat"><span class="val">${time}</span><span class="unit">MIN</span></div>
+      <div class="act-stat"><span class="val">${tss}</span><span class="unit">TSS</span>
+        <div class="tss-bar-wrap"><div class="tss-bar" style="width:${bar}%"></div></div></div>
+      <div class="act-stat"><span class="val">${wkg}</span><span class="unit">W/KG</span></div>
+    </div>`;
+  }).join('');
+}
+
+function buildBrief(fitness, wellness, acts) {
+  const lat  = fitness[fitness.length-1]||{};
+  const w    = wellness.length?wellness[wellness.length-1]:{};
+  const rec  = [...acts].reverse().slice(0,5);
+  const actS = rec.map(a=>{
+    const d    = (a.start_date_local||'').slice(0,10);
+    const dist = a.distance?(a.distance/1000).toFixed(1)+'km':'';
+    const tss  = a.icu_training_load?`TSS:${Math.round(a.icu_training_load)}`:'';
+    const np   = a.weighted_average_watts?`NP:${Math.round(a.weighted_average_watts)}w`:'';
+    return `  • ${d} — ${a.name||'Ride'} ${dist} ${tss} ${np}`.trim();
+  }).join('\n');
+
+  document.getElementById('claudeBrief').textContent =
+`📋 DAILY TRAINING DATA — ${new Date().toDateString()}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 David Moreno | 38y | 79kg | 1.85m | Capos Team
+
+📊 PERFORMANCE MANAGEMENT:
+  • CTL (Fitness):  ${lat.ctl!=null?Math.round(lat.ctl):'N/A'}
+  • ATL (Fatigue):  ${lat.atl!=null?Math.round(lat.atl):'N/A'}
+  • TSB (Form):     ${lat.tsb!=null?Math.round(lat.tsb):'N/A'}
+
+😴 WELLNESS (latest):
+  • Resting HR:     ${w.restingHR?Math.round(w.restingHR)+' bpm':'N/A'}
+  • HRV:            ${w.hrv?Math.round(w.hrv)+' ms':'N/A'}
+  • Sleep:          ${w.sleepSecs?(w.sleepSecs/3600).toFixed(1)+' hrs':'N/A'}
+  • Sleep quality:  ${w.sleepQuality?w.sleepQuality+'/5':'N/A'}
+  • Fatigue:        ${w.fatigue?w.fatigue+'/7':'N/A'}
+  • Soreness:       ${w.soreness?w.soreness+'/7':'N/A'}
+  • Mood:           ${w.mood?w.mood+'/7':'N/A'}
+
+🚴 RECENT ACTIVITIES (last 30 days):
+${actS||'  No recent activities'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Paste this into Claude.ai and say:
+"Analyse my training and tell me what to do today"`;
+}
+
+function copyBrief() {
+  navigator.clipboard.writeText(document.getElementById('claudeBrief').textContent)
+    .then(()=>{
+      const b = document.querySelector('.brief-card .btn');
+      b.textContent='✓ COPIED!';
+      setTimeout(()=>b.textContent='📋 COPY TO CLIPBOARD',2000);
+    });
+}
+
+async function loadData() {
+  const id  = document.getElementById('athleteId').value.trim();
+  const key = document.getElementById('apiKey').value.trim();
+  const err = document.getElementById('setupError');
+  if(!id||!key){err.textContent='Please enter both fields.';return;}
+  err.textContent='';
+
+  const btn = document.querySelector('#setupCard .btn');
+  btn.disabled=true; btn.textContent='LOADING...';
+
+  try {
+    const [fitness, wellness, activities] = await Promise.all([
+      fetchFitness(id,key), fetchWellness(id,key), fetchActivities(id,key)
+    ]);
+    sessionStorage.setItem('icu_id',  id);
+    sessionStorage.setItem('icu_key', key);
+
+    document.getElementById('setupCard').style.display  = 'none';
+    document.getElementById('dashboard').style.display  = 'block';
+    document.getElementById('lastUpdated').textContent  = 'UPDATED: '+new Date().toLocaleTimeString();
+
+    renderKPIs(fitness, wellness);
+    renderActivities(activities);
+    buildBrief(fitness, wellness, activities);
+    setTimeout(()=>renderChart(fitness), 80);
+
+  } catch(e) {
+    err.textContent = '❌ '+e.message;
+  } finally {
+    btn.disabled=false; btn.textContent='LOAD DATA';
+  }
+}
+
+window.addEventListener('load', ()=>{
+  const id  = sessionStorage.getItem('icu_id');
+  const key = sessionStorage.getItem('icu_key');
+  if(id&&key){ document.getElementById('athleteId').value=id; document.getElementById('apiKey').value=key; loadData(); }
+});
+</script>
+</body>
+</html>
