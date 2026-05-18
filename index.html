@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>David Moreno · Cycling Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#090b0e;--surf:#0f1318;--surf2:#141920;--border:#1c2330;
+      --accent:#e8ff47;--blue:#47c8ff;--red:#ff5252;--orange:#ffaa47;
+      --text:#dde2ec;--muted:#4a5568;--ctl:#47c8ff;--atl:#ff5252;--tsb:#e8ff47;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;}
+.wrap{max-width:980px;margin:0 auto;padding:28px 16px 100px;}
+.hdr{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;
+      padding-bottom:20px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.hdr-name{font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:900;letter-spacing:-2px;line-height:1;}
+.hdr-name span{color:var(--accent);}
+.hdr-sub{color:var(--muted);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-top:4px;}
+.badge{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:3px;
+        font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;}
+.badge.ready  {background:rgba(232,255,71,.1);color:var(--accent);border:1px solid rgba(232,255,71,.25);}
+.badge.caution{background:rgba(255,170,71,.1);color:var(--orange);border:1px solid rgba(255,170,71,.25);}
+.badge.rest   {background:rgba(255,82,82,.1); color:var(--red);   border:1px solid rgba(255,82,82,.25);}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 2s infinite;}
+.updated{color:var(--muted);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+          text-align:right;margin:10px 0 20px;}
+.row{display:grid;gap:12px;margin-bottom:12px;}
+.row3{grid-template-columns:repeat(3,1fr);}
+.row4{grid-template-columns:repeat(4,1fr);}
+@media(max-width:600px){.row4{grid-template-columns:repeat(2,1fr);}}
+.card{background:var(--surf);border:1px solid var(--border);border-radius:4px;padding:18px;}
+.card-title{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;
+             color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
+.kpi{position:relative;overflow:hidden;}
+.kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;}
+.kpi.ctl::after{background:var(--ctl);} .kpi.atl::after{background:var(--atl);} .kpi.tsb::after{background:var(--tsb);}
+.kpi-val{font-family:'Barlow Condensed',sans-serif;font-size:56px;font-weight:900;letter-spacing:-2px;line-height:1;}
+.kpi.ctl .kpi-val{color:var(--ctl);} .kpi.atl .kpi-val{color:var(--atl);} .kpi.tsb .kpi-val{color:var(--tsb);}
+.kpi-sub{color:var(--muted);font-size:10px;margin-top:5px;letter-spacing:1px;text-transform:uppercase;}
+.well-val{font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:800;line-height:1;}
+.well-unit{color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-top:3px;}
+.legend{display:flex;gap:20px;flex-wrap:wrap;}
+.leg{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
+.leg-dot{width:10px;height:3px;border-radius:2px;}
+.act-table{width:100%;border-collapse:collapse;}
+.act-table th{color:var(--muted);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+               text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-weight:400;}
+.act-table th:first-child,.act-table th:nth-child(2){text-align:left;}
+.act-table td{padding:10px 8px;border-bottom:1px solid rgba(28,35,48,.6);font-size:12px;
+               text-align:right;vertical-align:middle;}
+.act-table td:first-child,.act-table td:nth-child(2){text-align:left;}
+.act-table tr:last-child td{border-bottom:none;}
+.act-table tr:hover td{background:rgba(255,255,255,.02);}
+.act-name{font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.big{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;}
+.unit{color:var(--muted);font-size:9px;display:block;letter-spacing:1px;}
+.muted{color:var(--muted);font-size:11px;}
+.tss-bar{height:3px;background:var(--accent);border-radius:2px;margin-top:4px;min-width:2px;}
+.brief-box{background:var(--surf2);border:1px solid var(--border);border-left:3px solid var(--blue);
+            border-radius:4px;padding:20px;margin-bottom:12px;}
+.brief-box h3{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;
+               color:var(--blue);letter-spacing:1px;margin-bottom:14px;}
+.brief-text{white-space:pre-wrap;font-size:12px;line-height:1.9;color:var(--text);}
+.copy-btn{margin-top:14px;padding:8px 20px;background:var(--blue);color:#090b0e;
+           border:none;border-radius:3px;font-family:'Barlow Condensed',sans-serif;
+           font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:opacity .2s;}
+.copy-btn:hover{opacity:.85;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="hdr">
+  <div>
+    <div class="hdr-name">DAVID <span>MORENO</span></div>
+    <div class="hdr-sub">Capos Team &middot; Amateur Cyclist &middot; 38y &middot; 79kg &middot; 1.85m</div>
+  </div>
+  <div class="badge ready"><div class="dot"></div>🟢 READY TO TRAIN</div>
+</div>
+
+<div class="updated">Last updated: Monday 18 May 2026 · 04:09 UTC</div>
+
+<div class="row row3">
+  <div class="card kpi ctl">
+    <div class="card-title">CTL &middot; Fitness</div>
+    <div class="kpi-val">—</div>
+    <div class="kpi-sub">Chronic Training Load</div>
+  </div>
+  <div class="card kpi atl">
+    <div class="card-title">ATL &middot; Fatigue</div>
+    <div class="kpi-val">—</div>
+    <div class="kpi-sub">Acute Training Load</div>
+  </div>
+  <div class="card kpi tsb">
+    <div class="card-title">TSB &middot; Form</div>
+    <div class="kpi-val">—</div>
+    <div class="kpi-sub">Fitness minus Fatigue</div>
+  </div>
+</div>
+
+<div class="row row4">
+  <div class="card">
+    <div class="card-title">Resting HR</div>
+    <div class="well-val">—</div>
+    <div class="well-unit">BPM</div>
+  </div>
+  <div class="card">
+    <div class="card-title">HRV</div>
+    <div class="well-val">—</div>
+    <div class="well-unit">ms</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Sleep</div>
+    <div class="well-val">—</div>
+    <div class="well-unit">hours</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Fatigue</div>
+    <div class="well-val">—</div>
+    <div class="well-unit">/ 7</div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:12px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+    <div class="card-title" style="margin:0;">Performance Management · 60 Days</div>
+    <div class="legend">
+      <div class="leg"><div class="leg-dot" style="background:var(--ctl)"></div>CTL</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--atl)"></div>ATL</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--tsb)"></div>TSB</div>
+    </div>
+  </div>
+  <canvas id="chart" height="200"></canvas>
+</div>
+
+<div class="card" style="margin-bottom:12px;">
+  <div class="card-title">Recent Activities</div>
+  <div style="overflow-x:auto;">
+  <table class="act-table">
+    <thead><tr>
+      <th>Date</th><th>Activity</th>
+      <th>km</th><th>min</th><th>TSS</th><th>NP</th><th>W/kg</th><th>HR</th>
+    </tr></thead>
+    <tbody><tr>
+        <td><span class="muted">2026-03-19</span></td>
+        <td><div class="act-name">Ride</div></td>
+        <td><span class="big">—</span><span class="unit">km</span></td>
+        <td><span class="big">—</span><span class="unit">min</span></td>
+        <td><span class="big">—</span><span class="unit">tss</span>
+            </td>
+        <td><span class="big">—</span><span class="unit">w</span></td>
+        <td><span class="big">—</span><span class="unit">w/kg</span></td>
+        <td><span class="big">—</span><span class="unit">bpm</span></td>
+      </tr><tr>
+        <td><span class="muted">2026-03-20</span></td>
+        <td><div class="act-name">Ride</div></td>
+        <td><span class="big">—</span><span class="unit">km</span></td>
+        <td><span class="big">—</span><span class="unit">min</span></td>
+        <td><span class="big">—</span><span class="unit">tss</span>
+            </td>
+        <td><span class="big">—</span><span class="unit">w</span></td>
+        <td><span class="big">—</span><span class="unit">w/kg</span></td>
+        <td><span class="big">—</span><span class="unit">bpm</span></td>
+      </tr><tr>
+        <td><span class="muted">2026-03-21</span></td>
+        <td><div class="act-name">Ride</div></td>
+        <td><span class="big">—</span><span class="unit">km</span></td>
+        <td><span class="big">—</span><span class="unit">min</span></td>
+        <td><span class="big">—</span><span class="unit">tss</span>
+            </td>
+        <td><span class="big">—</span><span class="unit">w</span></td>
+        <td><span class="big">—</span><span class="unit">w/kg</span></td>
+        <td><span class="big">—</span><span class="unit">bpm</span></td>
+      </tr><tr>
+        <td><span class="muted">2026-03-22</span></td>
+        <td><div class="act-name">Ride</div></td>
+        <td><span class="big">—</span><span class="unit">km</span></td>
+        <td><span class="big">—</span><span class="unit">min</span></td>
+        <td><span class="big">—</span><span class="unit">tss</span>
+            </td>
+        <td><span class="big">—</span><span class="unit">w</span></td>
+        <td><span class="big">—</span><span class="unit">w/kg</span></td>
+        <td><span class="big">—</span><span class="unit">bpm</span></td>
+      </tr><tr>
+        <td><span class="muted">2026-03-23</span></td>
+        <td><div class="act-name">Ride</div></td>
+        <td><span class="big">—</span><span class="unit">km</span></td>
+        <td><span class="big">—</span><span class="unit">min</span></td>
+        <td><span class="big">—</span><span class="unit">tss</span>
+            </td>
+        <td><span class="big">—</span><span class="unit">w</span></td>
+        <td><span class="big">—</span><span class="unit">w/kg</span></td>
+        <td><span class="big">—</span><span class="unit">bpm</span></td>
+      </tr><tr>
+        <td><span class="muted">2026-03-24</span></td>
+        <td><div class="act-name">Ride</div></td>
+        <td><span class="big">—</span><span class="unit">km</span></td>
+        <td><span class="big">—</span><span class="unit">min</span></td>
+        <td><span class="big">—</span><span class="unit">tss</span>
+            </td>
+        <td><span class="big">—</span><span class="unit">w</span></td>
+        <td><span class="big">—</span><span class="unit">w/kg</span></td>
+        <td><span class="big">—</span><span class="unit">bpm</span></td>
+      </tr><tr>
+        <td><span class="muted">2026-03-25</span></td>
+        <td><div class="act-name">Ride</div></td>
+        <td><span class="big">—</span><span class="unit">km</span></td>
+        <td><span class="big">—</span><span class="unit">min</span></td>
+        <td><span class="big">—</span><span class="unit">tss</span>
+            </td>
+        <td><span class="big">—</span><span class="unit">w</span></td>
+        <td><span class="big">—</span><span class="unit">w/kg</span></td>
+        <td><span class="big">—</span><span class="unit">bpm</span></td>
+      </tr><tr>
+        <td><span class="muted">2026-03-26</span></td>
+        <td><div class="act-name">Ride</div></td>
+        <td><span class="big">—</span><span class="unit">km</span></td>
+        <td><span class="big">—</span><span class="unit">min</span></td>
+        <td><span class="big">—</span><span class="unit">tss</span>
+            </td>
+        <td><span class="big">—</span><span class="unit">w</span></td>
+        <td><span class="big">—</span><span class="unit">w/kg</span></td>
+        <td><span class="big">—</span><span class="unit">bpm</span></td>
+      </tr><tr>
+        <td><span class="muted">2026-03-27</span></td>
+        <td><div class="act-name">Ride</div></td>
+        <td><span class="big">—</span><span class="unit">km</span></td>
+        <td><span class="big">—</span><span class="unit">min</span></td>
+        <td><span class="big">—</span><span class="unit">tss</span>
+            </td>
+        <td><span class="big">—</span><span class="unit">w</span></td>
+        <td><span class="big">—</span><span class="unit">w/kg</span></td>
+        <td><span class="big">—</span><span class="unit">bpm</span></td>
+      </tr><tr>
+        <td><span class="muted">2026-03-28</span></td>
+        <td><div class="act-name">Ride</div></td>
+        <td><span class="big">—</span><span class="unit">km</span></td>
+        <td><span class="big">—</span><span class="unit">min</span></td>
+        <td><span class="big">—</span><span class="unit">tss</span>
+            </td>
+        <td><span class="big">—</span><span class="unit">w</span></td>
+        <td><span class="big">—</span><span class="unit">w/kg</span></td>
+        <td><span class="big">—</span><span class="unit">bpm</span></td>
+      </tr></tbody>
+  </table>
+  </div>
+</div>
+
+<div class="brief-box">
+  <h3>🤖 CLAUDE DAILY BRIEF — Copy &amp; Paste into Claude.ai</h3>
+  <div class="brief-text" id="briefText">📋 DAILY TRAINING DATA — Monday, 18 May 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 ATHLETE: David Moreno | 38y | 79kg | 1.85m | Capos Team
+
+📊 PERFORMANCE MANAGEMENT (TODAY):
+  • CTL (Fitness):  N/A
+  • ATL (Fatigue):  N/A
+  • TSB (Form):     N/A
+
+😴 WELLNESS (LATEST):
+  • Resting HR:     N/A
+  • HRV:            N/A
+  • Sleep:          N/A
+  • Sleep quality:  N/A
+  • Fatigue:        N/A
+  • Soreness:       N/A
+  • Mood:           N/A
+
+🚴 LAST 7 ACTIVITIES:
+• 2026-03-19 — Ride
+• 2026-03-20 — Ride
+• 2026-03-21 — Ride
+• 2026-03-22 — Ride
+• 2026-03-23 — Ride
+• 2026-03-24 — Ride
+• 2026-03-25 — Ride
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Paste into Claude.ai and ask:
+"Analyse my training and give me today's coaching plan"
+</div>
+  <button class="copy-btn" onclick="copyBrief()">📋 COPY TO CLIPBOARD</button>
+</div>
+
+</div>
+<script>
+const RAW = [{"date": "2026-03-19", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-03-20", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-03-21", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-03-22", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-03-23", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-03-24", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-03-25", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-03-26", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-03-27", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-03-28", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-03-29", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-03-30", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-03-31", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-01", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-02", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-03", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-04", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-05", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-07", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-08", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-09", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-10", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-11", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-14", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-15", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-16", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-17", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-18", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-19", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-21", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-22", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-23", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-24", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-25", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-26", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-28", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-29", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-04-30", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-05-01", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-05-02", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-05-03", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-05-06", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-05-07", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-05-08", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-05-09", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-05-11", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-05-12", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-05-13", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-05-14", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-05-15", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-05-16", "ctl": null, "atl": null, "tsb": null}, {"date": "2026-05-17", "ctl": null, "atl": null, "tsb": null}];
+window.addEventListener('load', () => {
+  const canvas = document.getElementById('chart');
+  canvas.width = canvas.parentElement.offsetWidth;
+  const ctx = canvas.getContext('2d');
+  const pts = RAW.filter(d => d.ctl !== null);
+  if (!pts.length) return;
+  const pad = {t:10,r:10,b:28,l:40};
+  const W = canvas.width - pad.l - pad.r;
+  const H = canvas.height - pad.t - pad.b;
+  const vals = pts.flatMap(p=>[p.ctl,p.atl,p.tsb]).filter(v=>v!=null);
+  const minV = Math.min(...vals)-5, maxV = Math.max(...vals)+5;
+  const xS = i => pad.l + (i/(pts.length-1))*W;
+  const yS = v => pad.t + H - ((v-minV)/(maxV-minV))*H;
+  for(let i=0;i<=4;i++){
+    const y=pad.t+(H/4)*i;
+    ctx.strokeStyle='#1c2330';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+W,y);ctx.stroke();
+    ctx.fillStyle='#4a5568';ctx.font='9px JetBrains Mono';ctx.textAlign='right';
+    ctx.fillText(Math.round(maxV-((maxV-minV)/4)*i),pad.l-4,y+4);
+  }
+  if(minV<0&&maxV>0){
+    ctx.strokeStyle='rgba(232,255,71,.15)';ctx.setLineDash([4,4]);ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad.l,yS(0));ctx.lineTo(pad.l+W,yS(0));ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  function line(key,color,lw){
+    ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.beginPath();let s=false;
+    pts.forEach((p,i)=>{if(p[key]==null)return;if(!s){ctx.moveTo(xS(i),yS(p[key]));s=true;}else ctx.lineTo(xS(i),yS(p[key]));;});
+    ctx.stroke();
+  }
+  line('atl','#ff5252',1.5);line('tsb','#e8ff47',1.5);line('ctl','#47c8ff',2.5);
+  ctx.fillStyle='#4a5568';ctx.font='9px JetBrains Mono';ctx.textAlign='center';
+  const step=Math.max(1,Math.floor(pts.length/7));
+  pts.forEach((p,i)=>{if(i%step===0)ctx.fillText(p.date.slice(5),xS(i),canvas.height-6);});
+});
+function copyBrief(){
+  navigator.clipboard.writeText(document.getElementById('briefText').innerText).then(()=>{
+    const b=document.querySelector('.copy-btn');
+    b.textContent='✓ COPIED!';setTimeout(()=>b.textContent='📋 COPY TO CLIPBOARD',2500);
+  });
+}
+</script>
+</body>
+</html>
