@@ -2,7 +2,7 @@
 """
 🚴 David Moreno — Daily Cycling Dashboard Builder
 - Fetches wellness & activities from Intervals.icu
-- Generates index.html with PMC chart + nutrition panel
+- Generates index.html with PMC chart + nutrition panel + Renpho body comp
 - Committed back to repo → served via GitHub Pages
 """
 
@@ -24,10 +24,19 @@ ATHLETE = {
     "ftp":       340,
 }
 
-# ── WEEKLY PLAN — update this block each week ───────────────
-# kcal formula: Watts × 4.1 × hours (validated GE=0.21, Coyle 1991)
-# Nutrition plans from nutritionist PDFs:
-#   Descanso=1700 | Intervalos=2615 | Recovery=2977 | Endurance3h+=4558 kcal/day
+# ── BODY COMPOSITION — update every Tuesday after Renpho scan ──
+BODY_COMP = {
+    "updated": "May 22, 2026",
+    "metrics": [
+        {"label": "Weight",       "unit": "kg",  "baseline": 80.2,  "current": 79.8,  "delta": -0.35, "target": "78.5–79.5 kg", "better": "down"},
+        {"label": "Body Fat",     "unit": "%",   "baseline": 12.6,  "current": 12.5,  "delta": -0.10, "target": "10–12.6%",     "better": "down"},
+        {"label": "Fat-Free Mass","unit": "kg",  "baseline": 70.05, "current": 69.83, "delta": -0.22, "target": "≥69.5 kg",     "better": "up"},
+        {"label": "Visceral Fat", "unit": "",    "baseline": 6,     "current": 6,     "delta": 0,     "target": "≤8",           "better": "down"},
+        {"label": "Body Water",   "unit": "%",   "baseline": 63.1,  "current": 63.2,  "delta": +0.10, "target": "≥62%",         "better": "up"},
+    ]
+}
+
+# ── WEEKLY PLAN — update each week ─────────────────────────
 WEEK_PLAN = {
     "label":      "Week 1 — May 18–24, 2026",
     "phase":      "Return-to-Training · Post-Surgery Block",
@@ -44,7 +53,6 @@ WEEK_PLAN = {
 }
 
 def calc_kcal(watts, duration_min):
-    """Nutritionist validated: kcal = Watts × 4.1 × hours (GE=0.21)"""
     return round(watts * 4.1 * (duration_min / 60))
 
 def date_str(days_back=0):
@@ -61,27 +69,25 @@ def get(path, params=None):
 def fetch_all():
     print("📡 Fetching wellness (60 days)...")
     wellness = get("/wellness", {"oldest": date_str(60), "newest": date_str(0)})
-
     print("📡 Fetching activities (60 days)...")
     activities = get("/activities", {
         "oldest": date_str(60) + "T00:00:00",
         "newest": date_str(0)  + "T23:59:59",
     })
-
     print(f"   Wellness: {len(wellness)} | Activities: {len(activities)}")
     return wellness, activities
 
 # ── SUMMARY ────────────────────────────────────────────────
 def compute_summary(wellness, activities):
-    lat  = wellness[-1] if wellness else {}
-    ctl  = lat.get("ctl")
-    atl  = lat.get("atl")
-    tsb  = (ctl - atl) if (ctl and atl) else None
+    lat = wellness[-1] if wellness else {}
+    ctl = lat.get("ctl")
+    atl = lat.get("atl")
+    tsb = (ctl - atl) if (ctl and atl) else None
 
-    if tsb is None:       status, label = "ready",   "🟢 READY TO TRAIN"
-    elif tsb < -20:       status, label = "rest",    "🔴 REST DAY"
-    elif tsb < -5:        status, label = "caution", "🟡 TAKE IT EASY"
-    else:                 status, label = "ready",   "🟢 READY TO TRAIN"
+    if tsb is None:   status, label = "ready",   "🟢 READY TO TRAIN"
+    elif tsb < -20:   status, label = "rest",    "🔴 REST DAY"
+    elif tsb < -5:    status, label = "caution", "🟡 TAKE IT EASY"
+    else:             status, label = "ready",   "🟢 READY TO TRAIN"
 
     sleep_hrs = round(lat["sleepSecs"]/3600, 1) if lat.get("sleepSecs") else None
 
@@ -94,10 +100,9 @@ def compute_summary(wellness, activities):
         hr   = f"HR:{round(a['average_heartrate'])}"       if a.get("average_heartrate")       else ""
         act_lines.append(f"  • {d} — {a.get('name','Ride')} {dist} {tss} {np} {hr}".strip())
 
-    # Weekly plan totals
-    total_tss  = sum(s["tss"]          for s in WEEK_PLAN["sessions"])
-    total_kcal = sum(calc_kcal(s["avg_watts"], s["duration_min"]) for s in WEEK_PLAN["sessions"])
-    total_hrs  = sum(s["duration_min"] for s in WEEK_PLAN["sessions"]) / 60
+    plan_total_tss  = sum(s["tss"] for s in WEEK_PLAN["sessions"])
+    plan_total_kcal = sum(calc_kcal(s["avg_watts"], s["duration_min"]) for s in WEEK_PLAN["sessions"])
+    plan_total_hrs  = sum(s["duration_min"] for s in WEEK_PLAN["sessions"]) / 60
 
     brief = f"""📋 DAILY TRAINING DATA — {datetime.utcnow().strftime('%A, %d %B %Y')}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -117,10 +122,16 @@ def compute_summary(wellness, activities):
   • Sleep score:    {f"{round(lat['sleepScore'])}/100" if lat.get('sleepScore')    else 'N/A'}
   • Readiness:      {f"{round(lat['readiness'])}/100"  if lat.get('readiness')     else 'N/A'}
 
+⚖️ BODY COMPOSITION (Renpho · {BODY_COMP['updated']}):
+  • Weight:         {BODY_COMP['metrics'][0]['current']} kg (baseline {BODY_COMP['metrics'][0]['baseline']} kg)
+  • Body Fat:       {BODY_COMP['metrics'][1]['current']}% (baseline {BODY_COMP['metrics'][1]['baseline']}%)
+  • Fat-Free Mass:  {BODY_COMP['metrics'][2]['current']} kg (baseline {BODY_COMP['metrics'][2]['baseline']} kg)
+  • Body Water:     {BODY_COMP['metrics'][4]['current']}%
+
 📅 THIS WEEK ({WEEK_PLAN['label']}):
-  • Total TSS:   {total_tss}
-  • Total hours: {total_hrs:.1f}h
-  • Riding kcal: {total_kcal:,}
+  • Total TSS:   {plan_total_tss}
+  • Total hours: {plan_total_hrs:.1f}h
+  • Riding kcal: {plan_total_kcal:,}
 
 🚴 LAST 7 ACTIVITIES:
 {chr(10).join(act_lines) if act_lines else '  No recent activities'}
@@ -131,9 +142,9 @@ Paste into Claude.ai and ask:
 """
 
     return {
-        "ctl":          round(ctl,1)   if ctl  else None,
-        "atl":          round(atl,1)   if atl  else None,
-        "tsb":          round(tsb,1)   if tsb  else None,
+        "ctl":          round(ctl,1)  if ctl  else None,
+        "atl":          round(atl,1)  if atl  else None,
+        "tsb":          round(tsb,1)  if tsb  else None,
         "status":       status,
         "status_label": label,
         "resting_hr":   round(lat["restingHR"])          if lat.get("restingHR")  else None,
@@ -165,76 +176,66 @@ def generate_html(wellness, activities, summary):
             "tsb":  tsb,
         })
 
-    # Activity rows
-    act_rows = []
-    for a in reversed(activities[-10:]):
-        wkg = round(a["weighted_average_watts"]/ATHLETE["weight_kg"],2) if a.get("weighted_average_watts") else None
-        act_rows.append({
-            "date": (a.get("start_date_local") or "")[:10],
-            "name": a.get("name") or "Ride",
-            "dist": round(a["distance"]/1000,1)         if a.get("distance")              else None,
-            "time": round(a["moving_time"]/60)          if a.get("moving_time")            else None,
-            "tss":  round(a["icu_training_load"])       if a.get("icu_training_load")      else None,
-            "np":   round(a["weighted_average_watts"])  if a.get("weighted_average_watts") else None,
-            "hr":   round(a["average_heartrate"])       if a.get("average_heartrate")      else None,
-            "wkg":  wkg,
-        })
-
     tsb_display = (("+" if s["tsb"] > 0 else "") + str(s["tsb"])) if s["tsb"] is not None else "—"
-    max_tss = max((a["tss"] or 0 for a in act_rows), default=1)
 
-    # Build activity table rows HTML
-    act_html = ""
-    for a in act_rows:
-        bar_w = round((a["tss"] or 0)/max_tss*100) if max_tss else 0
-        tss_bar = f'<div class="tss-bar" style="width:{bar_w}px"></div>' if a["tss"] else ""
-        act_html += f"""<tr>
-        <td><span class="muted">{a['date']}</span></td>
-        <td><div class="act-name">{a['name']}</div></td>
-        <td><span class="big">{a['dist'] or '—'}</span><span class="unit">km</span></td>
-        <td><span class="big">{a['time'] or '—'}</span><span class="unit">min</span></td>
-        <td><span class="big">{a['tss'] or '—'}</span><span class="unit">tss</span>{tss_bar}</td>
-        <td><span class="big">{a['np'] or '—'}</span><span class="unit">w</span></td>
-        <td><span class="big">{a['wkg'] or '—'}</span><span class="unit">w/kg</span></td>
-        <td><span class="big">{a['hr'] or '—'}</span><span class="unit">bpm</span></td>
-      </tr>"""
-
-    # Build nutrition panel rows HTML
+    # Weekly nutrition rows
     nutr_html = ""
     plan_total_tss  = 0
     plan_total_kcal = 0
     plan_total_min  = 0
     today_str = datetime.utcnow().strftime("%b %d").lstrip("0")
-
     nutrition_colors = {
-        "Descanso":    ("#4a5568", "#e2e8f0"),
-        "Intervalos":  ("#1e40af", "#dbeafe"),
-        "Recovery":    ("#065f46", "#d1fae5"),
-        "Endurance3h+":("#7c2d12", "#fef3c7"),
+        "Descanso":    ("#4a5568","#e2e8f0"),
+        "Intervalos":  ("#1e40af","#dbeafe"),
+        "Recovery":    ("#065f46","#d1fae5"),
+        "Endurance3h+":("#7c2d12","#fef3c7"),
     }
-
-    for s_plan in WEEK_PLAN["sessions"]:
-        ride_kcal = calc_kcal(s_plan["avg_watts"], s_plan["duration_min"])
-        plan_total_tss  += s_plan["tss"]
+    for sp in WEEK_PLAN["sessions"]:
+        ride_kcal = calc_kcal(sp["avg_watts"], sp["duration_min"])
+        plan_total_tss  += sp["tss"]
         plan_total_kcal += ride_kcal
-        plan_total_min  += s_plan["duration_min"]
-        nc = nutrition_colors.get(s_plan["nutrition"], ("#4a5568","#e2e8f0"))
-        is_today = s_plan["date"] in today_str or today_str in s_plan["date"]
+        plan_total_min  += sp["duration_min"]
+        nc = nutrition_colors.get(sp["nutrition"], ("#4a5568","#e2e8f0"))
+        is_today = sp["date"] in today_str or today_str in sp["date"]
         row_style = 'style="background:rgba(232,255,71,.05);border-left:2px solid #e8ff47;"' if is_today else ""
-        duration_str = f"{s_plan['duration_min']//60}h{s_plan['duration_min']%60:02d}m" if s_plan['duration_min']>=60 else f"{s_plan['duration_min']}min"
+        dur = f"{sp['duration_min']//60}h{sp['duration_min']%60:02d}m" if sp['duration_min']>=60 else f"{sp['duration_min']}min"
         nutr_html += f"""<tr {row_style}>
-        <td><span class="muted">{s_plan['day']}</span><br/><span style="font-size:10px;color:#4a5568">{s_plan['date']}</span></td>
-        <td><div class="act-name" style="max-width:200px">{s_plan['name']}</div></td>
-        <td><span class="big">{duration_str}</span></td>
-        <td><span class="big">{s_plan['avg_watts']}</span><span class="unit">watts</span></td>
-        <td><span class="big">{s_plan['if_']}</span><span class="unit">IF</span></td>
-        <td><span class="big">{s_plan['tss']}</span><span class="unit">TSS</span></td>
+        <td><span class="muted">{sp['day']}</span><br/><span style="font-size:10px;color:#4a5568">{sp['date']}</span></td>
+        <td><div class="act-name" style="max-width:200px">{sp['name']}</div></td>
+        <td><span class="big">{dur}</span></td>
+        <td><span class="big">{sp['avg_watts']}</span><span class="unit">watts</span></td>
+        <td><span class="big">{sp['if_']}</span><span class="unit">IF</span></td>
+        <td><span class="big">{sp['tss']}</span><span class="unit">TSS</span></td>
         <td><span class="big" style="color:#e8ff47">{ride_kcal:,}</span><span class="unit">kcal</span></td>
-        <td><span style="background:{nc[1]};color:{nc[0]};padding:2px 8px;border-radius:2px;font-size:10px;letter-spacing:1px;font-weight:600">{s_plan['nutrition']}</span><br/><span style="font-size:10px;color:#4a5568">{s_plan['day_kcal']:,} kcal/day</span></td>
-        <td style="font-size:10px;color:#4a5568">≤{s_plan['hr_cap']} bpm</td>
+        <td><span style="background:{nc[1]};color:{nc[0]};padding:2px 8px;border-radius:2px;font-size:10px;letter-spacing:1px;font-weight:600">{sp['nutrition']}</span><br/><span style="font-size:10px;color:#4a5568">{sp['day_kcal']:,} kcal/day</span></td>
+        <td style="font-size:10px;color:#4a5568">≤{sp['hr_cap']} bpm</td>
       </tr>"""
 
     plan_hrs = plan_total_min / 60
+
+    # Body composition rows
+    body_html = ""
+    for m in BODY_COMP["metrics"]:
+        delta = m["delta"]
+        # Green if moving in right direction, red if not, grey if zero
+        if delta == 0:
+            delta_color = "#4a5568"
+            delta_icon  = "—"
+        elif (m["better"] == "down" and delta < 0) or (m["better"] == "up" and delta > 0):
+            delta_color = "#34d399"  # green
+            delta_icon  = f"▼ {abs(delta)}" if delta < 0 else f"▲ {abs(delta)}"
+        else:
+            delta_color = "#ff5252"  # red
+            delta_icon  = f"▲ {abs(delta)}" if delta > 0 else f"▼ {abs(delta)}"
+
+        unit = m["unit"]
+        body_html += f"""<tr>
+        <td><span style="font-weight:600;font-size:13px;">{m['label']}</span></td>
+        <td style="text-align:center"><span class="big">{m['baseline']}{unit}</span></td>
+        <td style="text-align:center"><span class="big" style="color:#e8ff47">{m['current']}{unit}</span></td>
+        <td style="text-align:center"><span style="color:{delta_color};font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700">{delta_icon}</span></td>
+        <td style="text-align:center"><span style="color:#47c8ff;font-size:12px">{m['target']}</span></td>
+      </tr>"""
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -295,14 +296,15 @@ body{{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monosp
 .unit{{color:var(--muted);font-size:9px;display:block;letter-spacing:1px;}}
 .muted{{color:var(--muted);font-size:11px;}}
 .tss-bar{{height:3px;background:var(--accent);border-radius:2px;margin-top:4px;min-width:2px;}}
-.section-header{{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
-                 gap:8px;margin-bottom:16px;}}
-.plan-meta{{font-size:11px;color:var(--muted);letter-spacing:1px;}}
-.plan-meta span{{color:var(--accent);font-weight:600;}}
+.section-header{{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px;}}
 .week-totals{{display:flex;gap:24px;flex-wrap:wrap;padding:14px;background:rgba(232,255,71,.05);
               border:1px solid rgba(232,255,71,.15);border-radius:3px;margin-bottom:12px;}}
-.week-total-item .wt-val{{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:var(--accent);}}
-.week-total-item .wt-label{{color:var(--muted);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;}}
+.wt-val{{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:var(--accent);}}
+.wt-label{{color:var(--muted);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;}}
+.goal-bar{{background:var(--surf);border:1px solid var(--border);border-radius:4px;
+           padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}}
+.g-label{{color:var(--muted);font-size:10px;letter-spacing:2px;text-transform:uppercase;}}
+.g-val{{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--accent);}}
 .brief-box{{background:var(--surf2);border:1px solid var(--border);border-left:3px solid var(--blue);
             border-radius:4px;padding:20px;margin-bottom:12px;}}
 .brief-box h3{{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;
@@ -312,10 +314,9 @@ body{{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monosp
            border:none;border-radius:3px;font-family:'Barlow Condensed',sans-serif;
            font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;}}
 .copy-btn:hover{{opacity:.85;}}
-.goal-bar{{background:var(--surf);border:1px solid var(--border);border-radius:4px;
-           padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}}
-.goal-bar .g-label{{color:var(--muted);font-size:10px;letter-spacing:2px;text-transform:uppercase;}}
-.goal-bar .g-val{{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--accent);}}
+/* Body comp table specific */
+.body-tbl th{{text-align:center;}} .body-tbl th:first-child{{text-align:left;}}
+.body-tbl td{{text-align:center;}} .body-tbl td:first-child{{text-align:left;}}
 @keyframes pulse{{0%,100%{{opacity:1;}}50%{{opacity:.3;}}}}
 </style>
 </head>
@@ -335,29 +336,17 @@ body{{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monosp
 <!-- GOAL BAR -->
 <div class="goal-bar">
   <div><div class="g-label">Goal Event</div><div class="g-val">{WEEK_PLAN['goal_event']}</div></div>
-  <div style="border-left:1px solid var(--border);height:30px;margin:0 8px"></div>
+  <div style="border-left:1px solid var(--border);height:30px;margin:0 4px"></div>
   <div><div class="g-label">Phase</div><div class="g-val" style="font-size:16px;color:var(--text)">{WEEK_PLAN['phase']}</div></div>
-  <div style="border-left:1px solid var(--border);height:30px;margin:0 8px"></div>
+  <div style="border-left:1px solid var(--border);height:30px;margin:0 4px"></div>
   <div><div class="g-label">Week</div><div class="g-val" style="font-size:16px;color:var(--text)">{WEEK_PLAN['label']}</div></div>
 </div>
 
 <!-- CTL / ATL / TSB -->
 <div class="row row3">
-  <div class="card kpi ctl">
-    <div class="card-title">CTL &middot; Fitness</div>
-    <div class="kpi-val">{s['ctl'] or '—'}</div>
-    <div class="kpi-sub">Chronic Training Load</div>
-  </div>
-  <div class="card kpi atl">
-    <div class="card-title">ATL &middot; Fatigue</div>
-    <div class="kpi-val">{s['atl'] or '—'}</div>
-    <div class="kpi-sub">Acute Training Load</div>
-  </div>
-  <div class="card kpi tsb">
-    <div class="card-title">TSB &middot; Form</div>
-    <div class="kpi-val">{tsb_display}</div>
-    <div class="kpi-sub">Fitness minus Fatigue</div>
-  </div>
+  <div class="card kpi ctl"><div class="card-title">CTL &middot; Fitness</div><div class="kpi-val">{s['ctl'] or '—'}</div><div class="kpi-sub">Chronic Training Load</div></div>
+  <div class="card kpi atl"><div class="card-title">ATL &middot; Fatigue</div><div class="kpi-val">{s['atl'] or '—'}</div><div class="kpi-sub">Acute Training Load</div></div>
+  <div class="card kpi tsb"><div class="card-title">TSB &middot; Form</div><div class="kpi-val">{tsb_display}</div><div class="kpi-sub">Fitness minus Fatigue</div></div>
 </div>
 
 <!-- WELLNESS -->
@@ -381,23 +370,42 @@ body{{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monosp
   <canvas id="chart" height="200"></canvas>
 </div>
 
+<!-- BODY COMPOSITION -->
+<div class="card" style="margin-bottom:12px;">
+  <div class="section-header">
+    <div>
+      <div class="card-title" style="margin:0">⚖️ Body Composition · Renpho</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:1px;">Baseline: May 18, 2026 &nbsp;|&nbsp; Latest: {BODY_COMP['updated']} &nbsp;|&nbsp; Scanned every Tuesday (fasted)</div>
+    </div>
+  </div>
+  <div style="overflow-x:auto;">
+  <table class="tbl body-tbl">
+    <thead><tr>
+      <th>Metric</th>
+      <th>Baseline</th>
+      <th>Current</th>
+      <th>Delta</th>
+      <th>Target</th>
+    </tr></thead>
+    <tbody>{body_html}</tbody>
+  </table>
+  </div>
+</div>
+
 <!-- WEEKLY NUTRITION PANEL -->
 <div class="card" style="margin-bottom:12px;">
   <div class="section-header">
     <div>
       <div class="card-title" style="margin:0">🥗 Weekly Training + Nutrition Plan</div>
-      <div class="plan-meta">For nutritionist · {WEEK_PLAN['label']} · FTP <span>{ATHLETE['ftp']}W</span> · Formula: kcal = Watts × 4.1 × hrs (GE=0.21)</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:1px;">For nutritionist &nbsp;|&nbsp; {WEEK_PLAN['label']}</div>
     </div>
   </div>
-
-  <!-- Week totals -->
   <div class="week-totals">
-    <div class="week-total-item"><div class="wt-val">{plan_total_tss}</div><div class="wt-label">Total TSS</div></div>
-    <div class="week-total-item"><div class="wt-val">{plan_hrs:.1f}h</div><div class="wt-label">Total Hours</div></div>
-    <div class="week-total-item"><div class="wt-val">{plan_total_kcal:,}</div><div class="wt-label">Riding kcal</div></div>
-    <div class="week-total-item"><div class="wt-val">{sum(s['day_kcal'] for s in WEEK_PLAN['sessions']):,}</div><div class="wt-label">Total daily kcal</div></div>
+    <div><div class="wt-val">{plan_total_tss}</div><div class="wt-label">Total TSS</div></div>
+    <div><div class="wt-val">{plan_hrs:.1f}h</div><div class="wt-label">Total Hours</div></div>
+    <div><div class="wt-val">{plan_total_kcal:,}</div><div class="wt-label">Riding kcal</div></div>
+    <div><div class="wt-val">{sum(sp['day_kcal'] for sp in WEEK_PLAN['sessions']):,}</div><div class="wt-label">Total daily kcal</div></div>
   </div>
-
   <div style="overflow-x:auto;">
   <table class="tbl">
     <thead><tr>
@@ -408,24 +416,8 @@ body{{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monosp
     <tbody>{nutr_html}</tbody>
   </table>
   </div>
-  <div style="margin-top:12px;font-size:10px;color:var(--muted);line-height:1.7;">
-    ⚡ Highlighted row = today's session &nbsp;|&nbsp;
-    Ride kcal = on-bike energy cost only &nbsp;|&nbsp;
-    Daily kcal = full day target from nutritionist plan &nbsp;|&nbsp;
-    Intra-ride: Z2 short → 30g/hr · Z2 long → 60g/hr · Tempo → 60g/hr
-  </div>
-</div>
-
-<!-- RECENT ACTIVITIES -->
-<div class="card" style="margin-bottom:12px;">
-  <div class="card-title">Recent Activities (Strava sync)</div>
-  <div style="overflow-x:auto;">
-  <table class="tbl">
-    <thead><tr>
-      <th>Date</th><th>Activity</th><th>km</th><th>min</th><th>TSS</th><th>NP</th><th>W/kg</th><th>HR</th>
-    </tr></thead>
-    <tbody>{act_html}</tbody>
-  </table>
+  <div style="margin-top:12px;font-size:10px;color:var(--muted);line-height:1.8;">
+    ⚡ Highlighted row = today &nbsp;|&nbsp; Ride kcal = on-bike energy only &nbsp;|&nbsp; Daily kcal = full day target &nbsp;|&nbsp; Intra-ride: Z2 short → 30g/hr · Z2 long → 60g/hr · Tempo → 60g/hr
   </div>
 </div>
 
@@ -489,18 +481,15 @@ function copyBrief(){{
 def main():
     print(f"🚴 Building dashboard for {ATHLETE['name']}...")
     wellness, activities = fetch_all()
-
     print("📊 Computing summary...")
     summary = compute_summary(wellness, activities)
     print(f"   CTL={summary['ctl']} ATL={summary['atl']} TSB={summary['tsb']}")
     print(f"   Status: {summary['status_label']}")
-
     print("🎨 Generating HTML...")
     html = generate_html(wellness, activities, summary)
-
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html)
-    print(f"✅ Done! index.html written ({len(html):,} bytes)")
+    print(f"✅ Done! ({len(html):,} bytes)")
 
 if __name__ == "__main__":
     main()
