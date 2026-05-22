@@ -57,14 +57,15 @@ body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospa
 .unit{color:var(--muted);font-size:9px;display:block;letter-spacing:1px;}
 .muted{color:var(--muted);font-size:11px;}
 .tss-bar{height:3px;background:var(--accent);border-radius:2px;margin-top:4px;min-width:2px;}
-.section-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
-                 gap:8px;margin-bottom:16px;}
-.plan-meta{font-size:11px;color:var(--muted);letter-spacing:1px;}
-.plan-meta span{color:var(--accent);font-weight:600;}
+.section-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
 .week-totals{display:flex;gap:24px;flex-wrap:wrap;padding:14px;background:rgba(232,255,71,.05);
               border:1px solid rgba(232,255,71,.15);border-radius:3px;margin-bottom:12px;}
-.week-total-item .wt-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:var(--accent);}
-.week-total-item .wt-label{color:var(--muted);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;}
+.wt-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:var(--accent);}
+.wt-label{color:var(--muted);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;}
+.goal-bar{background:var(--surf);border:1px solid var(--border);border-radius:4px;
+           padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.g-label{color:var(--muted);font-size:10px;letter-spacing:2px;text-transform:uppercase;}
+.g-val{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--accent);}
 .brief-box{background:var(--surf2);border:1px solid var(--border);border-left:3px solid var(--blue);
             border-radius:4px;padding:20px;margin-bottom:12px;}
 .brief-box h3{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;
@@ -74,10 +75,9 @@ body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospa
            border:none;border-radius:3px;font-family:'Barlow Condensed',sans-serif;
            font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;}
 .copy-btn:hover{opacity:.85;}
-.goal-bar{background:var(--surf);border:1px solid var(--border);border-radius:4px;
-           padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
-.goal-bar .g-label{color:var(--muted);font-size:10px;letter-spacing:2px;text-transform:uppercase;}
-.goal-bar .g-val{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--accent);}
+/* Body comp table specific */
+.body-tbl th{text-align:center;} .body-tbl th:first-child{text-align:left;}
+.body-tbl td{text-align:center;} .body-tbl td:first-child{text-align:left;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 </style>
 </head>
@@ -92,34 +92,22 @@ body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospa
   </div>
   <div class="badge ready"><div class="dot"></div>🟢 READY TO TRAIN</div>
 </div>
-<div class="updated">Last updated: Friday 22 May 2026 · 18:05 UTC</div>
+<div class="updated">Last updated: Friday 22 May 2026 · 22:05 UTC</div>
 
 <!-- GOAL BAR -->
 <div class="goal-bar">
   <div><div class="g-label">Goal Event</div><div class="g-val">National TT Championship · Aug 28, 2026</div></div>
-  <div style="border-left:1px solid var(--border);height:30px;margin:0 8px"></div>
+  <div style="border-left:1px solid var(--border);height:30px;margin:0 4px"></div>
   <div><div class="g-label">Phase</div><div class="g-val" style="font-size:16px;color:var(--text)">Return-to-Training · Post-Surgery Block</div></div>
-  <div style="border-left:1px solid var(--border);height:30px;margin:0 8px"></div>
+  <div style="border-left:1px solid var(--border);height:30px;margin:0 4px"></div>
   <div><div class="g-label">Week</div><div class="g-val" style="font-size:16px;color:var(--text)">Week 1 — May 18–24, 2026</div></div>
 </div>
 
 <!-- CTL / ATL / TSB -->
 <div class="row row3">
-  <div class="card kpi ctl">
-    <div class="card-title">CTL &middot; Fitness</div>
-    <div class="kpi-val">77.9</div>
-    <div class="kpi-sub">Chronic Training Load</div>
-  </div>
-  <div class="card kpi atl">
-    <div class="card-title">ATL &middot; Fatigue</div>
-    <div class="kpi-val">43.6</div>
-    <div class="kpi-sub">Acute Training Load</div>
-  </div>
-  <div class="card kpi tsb">
-    <div class="card-title">TSB &middot; Form</div>
-    <div class="kpi-val">+34.3</div>
-    <div class="kpi-sub">Fitness minus Fatigue</div>
-  </div>
+  <div class="card kpi ctl"><div class="card-title">CTL &middot; Fitness</div><div class="kpi-val">77.9</div><div class="kpi-sub">Chronic Training Load</div></div>
+  <div class="card kpi atl"><div class="card-title">ATL &middot; Fatigue</div><div class="kpi-val">43.6</div><div class="kpi-sub">Acute Training Load</div></div>
+  <div class="card kpi tsb"><div class="card-title">TSB &middot; Form</div><div class="kpi-val">+34.3</div><div class="kpi-sub">Fitness minus Fatigue</div></div>
 </div>
 
 <!-- WELLNESS -->
@@ -143,23 +131,72 @@ body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospa
   <canvas id="chart" height="200"></canvas>
 </div>
 
+<!-- BODY COMPOSITION -->
+<div class="card" style="margin-bottom:12px;">
+  <div class="section-header">
+    <div>
+      <div class="card-title" style="margin:0">⚖️ Body Composition · Renpho</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:1px;">Baseline: May 18, 2026 &nbsp;|&nbsp; Latest: May 22, 2026 &nbsp;|&nbsp; Scanned every Tuesday (fasted)</div>
+    </div>
+  </div>
+  <div style="overflow-x:auto;">
+  <table class="tbl body-tbl">
+    <thead><tr>
+      <th>Metric</th>
+      <th>Baseline</th>
+      <th>Current</th>
+      <th>Delta</th>
+      <th>Target</th>
+    </tr></thead>
+    <tbody><tr>
+        <td><span style="font-weight:600;font-size:13px;">Weight</span></td>
+        <td style="text-align:center"><span class="big">80.2kg</span></td>
+        <td style="text-align:center"><span class="big" style="color:#e8ff47">79.8kg</span></td>
+        <td style="text-align:center"><span style="color:#34d399;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700">▼ 0.35</span></td>
+        <td style="text-align:center"><span style="color:#47c8ff;font-size:12px">78.5–79.5 kg</span></td>
+      </tr><tr>
+        <td><span style="font-weight:600;font-size:13px;">Body Fat</span></td>
+        <td style="text-align:center"><span class="big">12.6%</span></td>
+        <td style="text-align:center"><span class="big" style="color:#e8ff47">12.5%</span></td>
+        <td style="text-align:center"><span style="color:#34d399;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700">▼ 0.1</span></td>
+        <td style="text-align:center"><span style="color:#47c8ff;font-size:12px">10–12.6%</span></td>
+      </tr><tr>
+        <td><span style="font-weight:600;font-size:13px;">Fat-Free Mass</span></td>
+        <td style="text-align:center"><span class="big">70.05kg</span></td>
+        <td style="text-align:center"><span class="big" style="color:#e8ff47">69.83kg</span></td>
+        <td style="text-align:center"><span style="color:#ff5252;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700">▼ 0.22</span></td>
+        <td style="text-align:center"><span style="color:#47c8ff;font-size:12px">≥69.5 kg</span></td>
+      </tr><tr>
+        <td><span style="font-weight:600;font-size:13px;">Visceral Fat</span></td>
+        <td style="text-align:center"><span class="big">6</span></td>
+        <td style="text-align:center"><span class="big" style="color:#e8ff47">6</span></td>
+        <td style="text-align:center"><span style="color:#4a5568;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700">—</span></td>
+        <td style="text-align:center"><span style="color:#47c8ff;font-size:12px">≤8</span></td>
+      </tr><tr>
+        <td><span style="font-weight:600;font-size:13px;">Body Water</span></td>
+        <td style="text-align:center"><span class="big">63.1%</span></td>
+        <td style="text-align:center"><span class="big" style="color:#e8ff47">63.2%</span></td>
+        <td style="text-align:center"><span style="color:#34d399;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700">▲ 0.1</span></td>
+        <td style="text-align:center"><span style="color:#47c8ff;font-size:12px">≥62%</span></td>
+      </tr></tbody>
+  </table>
+  </div>
+</div>
+
 <!-- WEEKLY NUTRITION PANEL -->
 <div class="card" style="margin-bottom:12px;">
   <div class="section-header">
     <div>
       <div class="card-title" style="margin:0">🥗 Weekly Training + Nutrition Plan</div>
-      <div class="plan-meta">For nutritionist · Week 1 — May 18–24, 2026 · FTP <span>340W</span> · Formula: kcal = Watts × 4.1 × hrs (GE=0.21)</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:1px;">For nutritionist &nbsp;|&nbsp; Week 1 — May 18–24, 2026</div>
     </div>
   </div>
-
-  <!-- Week totals -->
   <div class="week-totals">
-    <div class="week-total-item"><div class="wt-val">433</div><div class="wt-label">Total TSS</div></div>
-    <div class="week-total-item"><div class="wt-val">10.5h</div><div class="wt-label">Total Hours</div></div>
-    <div class="week-total-item"><div class="wt-val">9,165</div><div class="wt-label">Riding kcal</div></div>
-    <div class="week-total-item"><div class="wt-val">18,780</div><div class="wt-label">Total daily kcal</div></div>
+    <div><div class="wt-val">433</div><div class="wt-label">Total TSS</div></div>
+    <div><div class="wt-val">10.5h</div><div class="wt-label">Total Hours</div></div>
+    <div><div class="wt-val">9,165</div><div class="wt-label">Riding kcal</div></div>
+    <div><div class="wt-val">18,780</div><div class="wt-label">Total daily kcal</div></div>
   </div>
-
   <div style="overflow-x:auto;">
   <table class="tbl">
     <thead><tr>
@@ -240,114 +277,8 @@ body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospa
       </tr></tbody>
   </table>
   </div>
-  <div style="margin-top:12px;font-size:10px;color:var(--muted);line-height:1.7;">
-    ⚡ Highlighted row = today's session &nbsp;|&nbsp;
-    Ride kcal = on-bike energy cost only &nbsp;|&nbsp;
-    Daily kcal = full day target from nutritionist plan &nbsp;|&nbsp;
-    Intra-ride: Z2 short → 30g/hr · Z2 long → 60g/hr · Tempo → 60g/hr
-  </div>
-</div>
-
-<!-- RECENT ACTIVITIES -->
-<div class="card" style="margin-bottom:12px;">
-  <div class="card-title">Recent Activities (Strava sync)</div>
-  <div style="overflow-x:auto;">
-  <table class="tbl">
-    <thead><tr>
-      <th>Date</th><th>Activity</th><th>km</th><th>min</th><th>TSS</th><th>NP</th><th>W/kg</th><th>HR</th>
-    </tr></thead>
-    <tbody><tr>
-        <td><span class="muted">2026-03-23</span></td>
-        <td><div class="act-name">Ride</div></td>
-        <td><span class="big">—</span><span class="unit">km</span></td>
-        <td><span class="big">—</span><span class="unit">min</span></td>
-        <td><span class="big">—</span><span class="unit">tss</span></td>
-        <td><span class="big">—</span><span class="unit">w</span></td>
-        <td><span class="big">—</span><span class="unit">w/kg</span></td>
-        <td><span class="big">—</span><span class="unit">bpm</span></td>
-      </tr><tr>
-        <td><span class="muted">2026-03-24</span></td>
-        <td><div class="act-name">Ride</div></td>
-        <td><span class="big">—</span><span class="unit">km</span></td>
-        <td><span class="big">—</span><span class="unit">min</span></td>
-        <td><span class="big">—</span><span class="unit">tss</span></td>
-        <td><span class="big">—</span><span class="unit">w</span></td>
-        <td><span class="big">—</span><span class="unit">w/kg</span></td>
-        <td><span class="big">—</span><span class="unit">bpm</span></td>
-      </tr><tr>
-        <td><span class="muted">2026-03-25</span></td>
-        <td><div class="act-name">Ride</div></td>
-        <td><span class="big">—</span><span class="unit">km</span></td>
-        <td><span class="big">—</span><span class="unit">min</span></td>
-        <td><span class="big">—</span><span class="unit">tss</span></td>
-        <td><span class="big">—</span><span class="unit">w</span></td>
-        <td><span class="big">—</span><span class="unit">w/kg</span></td>
-        <td><span class="big">—</span><span class="unit">bpm</span></td>
-      </tr><tr>
-        <td><span class="muted">2026-03-26</span></td>
-        <td><div class="act-name">Ride</div></td>
-        <td><span class="big">—</span><span class="unit">km</span></td>
-        <td><span class="big">—</span><span class="unit">min</span></td>
-        <td><span class="big">—</span><span class="unit">tss</span></td>
-        <td><span class="big">—</span><span class="unit">w</span></td>
-        <td><span class="big">—</span><span class="unit">w/kg</span></td>
-        <td><span class="big">—</span><span class="unit">bpm</span></td>
-      </tr><tr>
-        <td><span class="muted">2026-03-27</span></td>
-        <td><div class="act-name">Ride</div></td>
-        <td><span class="big">—</span><span class="unit">km</span></td>
-        <td><span class="big">—</span><span class="unit">min</span></td>
-        <td><span class="big">—</span><span class="unit">tss</span></td>
-        <td><span class="big">—</span><span class="unit">w</span></td>
-        <td><span class="big">—</span><span class="unit">w/kg</span></td>
-        <td><span class="big">—</span><span class="unit">bpm</span></td>
-      </tr><tr>
-        <td><span class="muted">2026-03-28</span></td>
-        <td><div class="act-name">Ride</div></td>
-        <td><span class="big">—</span><span class="unit">km</span></td>
-        <td><span class="big">—</span><span class="unit">min</span></td>
-        <td><span class="big">—</span><span class="unit">tss</span></td>
-        <td><span class="big">—</span><span class="unit">w</span></td>
-        <td><span class="big">—</span><span class="unit">w/kg</span></td>
-        <td><span class="big">—</span><span class="unit">bpm</span></td>
-      </tr><tr>
-        <td><span class="muted">2026-03-29</span></td>
-        <td><div class="act-name">Ride</div></td>
-        <td><span class="big">—</span><span class="unit">km</span></td>
-        <td><span class="big">—</span><span class="unit">min</span></td>
-        <td><span class="big">—</span><span class="unit">tss</span></td>
-        <td><span class="big">—</span><span class="unit">w</span></td>
-        <td><span class="big">—</span><span class="unit">w/kg</span></td>
-        <td><span class="big">—</span><span class="unit">bpm</span></td>
-      </tr><tr>
-        <td><span class="muted">2026-03-30</span></td>
-        <td><div class="act-name">Ride</div></td>
-        <td><span class="big">—</span><span class="unit">km</span></td>
-        <td><span class="big">—</span><span class="unit">min</span></td>
-        <td><span class="big">—</span><span class="unit">tss</span></td>
-        <td><span class="big">—</span><span class="unit">w</span></td>
-        <td><span class="big">—</span><span class="unit">w/kg</span></td>
-        <td><span class="big">—</span><span class="unit">bpm</span></td>
-      </tr><tr>
-        <td><span class="muted">2026-03-31</span></td>
-        <td><div class="act-name">Ride</div></td>
-        <td><span class="big">—</span><span class="unit">km</span></td>
-        <td><span class="big">—</span><span class="unit">min</span></td>
-        <td><span class="big">—</span><span class="unit">tss</span></td>
-        <td><span class="big">—</span><span class="unit">w</span></td>
-        <td><span class="big">—</span><span class="unit">w/kg</span></td>
-        <td><span class="big">—</span><span class="unit">bpm</span></td>
-      </tr><tr>
-        <td><span class="muted">2026-04-01</span></td>
-        <td><div class="act-name">Ride</div></td>
-        <td><span class="big">—</span><span class="unit">km</span></td>
-        <td><span class="big">—</span><span class="unit">min</span></td>
-        <td><span class="big">—</span><span class="unit">tss</span></td>
-        <td><span class="big">—</span><span class="unit">w</span></td>
-        <td><span class="big">—</span><span class="unit">w/kg</span></td>
-        <td><span class="big">—</span><span class="unit">bpm</span></td>
-      </tr></tbody>
-  </table>
+  <div style="margin-top:12px;font-size:10px;color:var(--muted);line-height:1.8;">
+    ⚡ Highlighted row = today &nbsp;|&nbsp; Ride kcal = on-bike energy only &nbsp;|&nbsp; Daily kcal = full day target &nbsp;|&nbsp; Intra-ride: Z2 short → 30g/hr · Z2 long → 60g/hr · Tempo → 60g/hr
   </div>
 </div>
 
@@ -371,6 +302,12 @@ body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospa
   • Sleep:          7.2 hrs
   • Sleep score:    83/100
   • Readiness:      85/100
+
+⚖️ BODY COMPOSITION (Renpho · May 22, 2026):
+  • Weight:         79.8 kg (baseline 80.2 kg)
+  • Body Fat:       12.5% (baseline 12.6%)
+  • Fat-Free Mass:  69.83 kg (baseline 70.05 kg)
+  • Body Water:     63.2%
 
 📅 THIS WEEK (Week 1 — May 18–24, 2026):
   • Total TSS:   433
